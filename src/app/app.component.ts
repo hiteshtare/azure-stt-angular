@@ -56,18 +56,18 @@ export class AppComponent {
   public async getTokenOrRefresh() {
     const speechToken = this.cookieService.get('speech-token');
 
-    if (speechToken === undefined) {
+    if (!speechToken) {
       try {
-        const resp = await this.http.get('/api/get-speech-token').toPromise();
+        const resp = await this.http.get('http://localhost:3000/api/get-speech-token').toPromise();
 
         if (resp) {
           // tslint:disable-next-line: no-string-literal
-          const token = resp['data']['token'];
+          const token = resp['token'];
           // tslint:disable-next-line: no-string-literal
-          const region = resp['data']['region'];
+          const region = resp['region'];
           this.cookieService.set('speech-token', region + ':' + token, { expires: 540, path: '/' });
 
-          console.log('Token fetched from back-end: ' + token);
+          console.warn('Token fetched from back-end: ' + token);
           // tslint:disable-next-line: object-literal-shorthand
           return { authToken: token, region: region };
         }
