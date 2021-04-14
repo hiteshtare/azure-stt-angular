@@ -12,7 +12,7 @@ export class AppComponent {
   title = 'azure-stt-angular';
   status = 'INITIALIZED: ready to test speech...';
 
-  constructor(private http: HttpClient, private cookieService: CookieService) {
+  constructor(private http: HttpClient) {
 
   }
 
@@ -54,7 +54,7 @@ export class AppComponent {
 
   // tslint:disable-next-line: typedef
   public async getTokenOrRefresh() {
-    const speechToken = this.cookieService.get('speech-token');
+    const speechToken = localStorage.getItem('speech-token');
 
     if (!speechToken) {
       try {
@@ -65,7 +65,8 @@ export class AppComponent {
           const token = resp['token'];
           // tslint:disable-next-line: no-string-literal
           const region = resp['region'];
-          this.cookieService.set('speech-token', region + ':' + token, { expires: 540, path: '/' });
+          localStorage.setItem('speech-token', region + ':' + token);
+          localStorage.setItem('speech-token-expiresOn', '540');
 
           console.warn('Token fetched from back-end: ' + token);
           // tslint:disable-next-line: object-literal-shorthand
