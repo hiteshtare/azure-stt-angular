@@ -13,7 +13,7 @@ export class AppComponent {
   status = 'INITIALIZED: ready to test speech...';
 
   constructor(private http: HttpClient) {
-
+    this.componentDidMount();
   }
 
   // tslint:disable-next-line: typedef
