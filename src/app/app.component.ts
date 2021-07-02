@@ -1,89 +1,79 @@
 import { Component } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import * as speechsdk from 'microsoft-cognitiveservices-speech-sdk';
+import { AudioConfig, ResultReason, SpeechConfig, SpeechRecognizer } from 'microsoft-cognitiveservices-speech-sdk'
 
 @Component({
-  selector: 'app-root',
+  selector: 'my-app',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css']
 })
 export class AppComponent {
-  title = 'azure-stt-angular';
-  status = 'INITIALIZED: ready to test speech...';
+  name = 'Speech To Text';
+  public recognizing = false;
+  public notification: string;
+  public innerHtml: string = '';
+  public lastRecognized: string = '';
+  _recognizer: SpeechRecognizer;
+  startButton(event) {
+    if (this.recognizing) {
+      this.stop();
+      this.recognizing = false;
+    }
+    else {
 
-  constructor(private http: HttpClient) {
-    this.componentDidMount();
-  }
+      this.recognizing = true;
+      console.log("record");
 
-  // tslint:disable-next-line: typedef
-  public async componentDidMount() {
-    // check for valid speech key/region
-    const tokenRes = await this.getTokenOrRefresh();
-    if (tokenRes.authToken === null) {
-      this.status = 'FATAL_ERROR: ' + tokenRes.error;
+      //const { webkitSpeechRecognition }: IWindow = <IWindow>window;
+      const audioConfig = AudioConfig.fromDefaultMicrophoneInput();
+
+      const speechConfig = SpeechConfig.fromSubscription("6cabd6feaa1a4ac99977dd95b703c370", "eastus");
+      speechConfig.speechRecognitionLanguage = 'en-US';
+      speechConfig.endpointId = 'bb1706cd-f71d-4901-9240-5a0d5e08be7a';
+      speechConfig.enableDictation();
+      this._recognizer = new SpeechRecognizer(speechConfig, audioConfig)
+      this._recognizer.recognizing = this._recognizer.recognized = this.recognizerCallback.bind(this)
+      this._recognizer.startContinuousRecognitionAsync();
     }
   }
-
-  // tslint:disable-next-line: typedef
-  public async sttFromMic() {
-    const tokenObj = await this.getTokenOrRefresh();
-
-    const speechConfig = speechsdk.SpeechConfig.fromAuthorizationToken(tokenObj.authToken, tokenObj.region);
-    speechConfig.speechRecognitionLanguage = 'en-US';
-
-    // Custom Speech endpoint Id
-    // speechConfig.endpointId = 'edeb24bf-5178-4fcc-b05d-83a948d846ef';
-
-    // New endpoint
-    speechConfig.endpointId = '813293e0-5ec8-4327-b403-3f15d6d4683e';
-
-    const audioConfig = speechsdk.AudioConfig.fromDefaultMicrophoneInput();
-    const recognizer = new speechsdk.SpeechRecognizer(speechConfig, audioConfig);
-
-    this.status = 'speak into your microphone...';
-
-    recognizer.recognizeOnceAsync(result => {
-      if (result.reason === speechsdk.ResultReason.RecognizedSpeech) {
-        this.status = `RECOGNIZED: Text=${result.text}`;
-      } else {
-        this.status = 'ERROR: Speech was cancelled or could not be recognized. Ensure your microphone is working properly.';
-      }
-    });
-  }
-
-  // tslint:disable-next-line: typedef
-  public async getTokenOrRefresh() {
-    const speechToken = localStorage.getItem('speech-token');
-
-    if (!speechToken) {
-      try {
-        const resp = await this.http.get('http://localhost:3000/api/get-speech-token').toPromise();
-
-        if (resp) {
-          // tslint:disable-next-line: no-string-literal
-          const token = resp['token'];
-          // tslint:disable-next-line: no-string-literal
-          const region = resp['region'];
-          localStorage.setItem('speech-token', region + ':' + token);
-          localStorage.setItem('speech-token-expiresOn', '540');
-
-          console.warn('Token fetched from back-end: ' + token);
-          // tslint:disable-next-line: object-literal-shorthand
-          return { authToken: token, region: region };
-        }
-        else {
-          console.error(`Unable to fetch Token`);
-          return { authToken: null, error: '' };
-        }
-      } catch (err) {
-        console.error(err.response.data);
-        return { authToken: null, error: err.response.data };
-      }
-    } else {
-      console.log('Token fetched from cookie: ' + speechToken);
-      const idx = speechToken.indexOf(':');
-      return { authToken: speechToken.slice(idx + 1), region: speechToken.slice(0, idx) };
+  recognizerCallback(s, e) {
+    console.log(e.result.text);
+    const reason = ResultReason[e.result.reason];
+    console.log(reason);
+    if (reason == "RecognizingSpeech") {
+      this.innerHtml = this.lastRecognized + e.result.text;
     }
+    if (reason == "RecognizedSpeech") {
+      this.lastRecognized += e.result.text + "\r\n";
+      this.innerHtml = this.lastRecognized;
+    }
+  }
+  stop() {
+
+    this._recognizer.stopContinuousRecognitionAsync(
+
+      stopRecognizer.bind(this),
+
+      function (err) {
+
+        stopRecognizer.bind(this)
+
+        console.error(err)
+
+      }.bind(this)
+
+    )
+
+
+
+    function stopRecognizer() {
+
+      this._recognizer.close()
+
+      this._recognizer = undefined
+
+      console.log('stopped')
+
+    }
+
   }
 }
-
