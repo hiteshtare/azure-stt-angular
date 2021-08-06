@@ -32,11 +32,21 @@ export class AppComponent {
       speechConfig.enableDictation();
       this._recognizer = new SpeechRecognizer(speechConfig, audioConfig)
       this._recognizer.recognizing = this._recognizer.recognized = this.recognizerCallback.bind(this)
-      this._recognizer.startContinuousRecognitionAsync();
+      this._recognizer.recognizeOnceAsync();
+
+      // Signals that the speech service has detected that speech has stopped.
+      this._recognizer.speechEndDetected = (s, e) => {
+        console.error('speechEndDetected');
+        this.recognizing = false;
+      };
     }
   }
   recognizerCallback(s, e) {
-    console.log(e.result.text);
+    console.warn(`recognizerCallback`);
+    console.log(e);
+    const resultText = e.result.text;
+    console.warn(`resultText`);
+    console.warn(resultText);
     const reason = ResultReason[e.result.reason];
     console.log(reason);
     if (reason == "RecognizingSpeech") {
